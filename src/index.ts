@@ -1,38 +1,41 @@
+import fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import Fastify from 'fastify';
 import { AuthService } from './services/AuthService';
 import { ChatGPTService } from './services/ChatGPTService';
 import { AuthHeaders, ChatRequest } from './types';
 
-const fastify = Fastify({
-  logger: {
-    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
-  },
+// Create Fastify instance
+const app = fastify({
+  logger: process.env.NODE_ENV === 'production' ? false : true,
 });
 
 // Register CORS
-fastify.register(cors, {
-  origin: true, // Allow all origins in development
+app.register(cors, {
+  origin: true,
   credentials: true,
 });
 
 // Register rate limiting
-fastify.register(rateLimit, {
+app.register(rateLimit, {
   max: parseInt(process.env.RATE_LIMIT_MAX || '10'),
-  timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW || '60000'), // 1 minute
+  timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW || '60000'),
   keyGenerator: (request) => {
     return (request.headers['x-user-id'] as string) || request.ip;
   },
 });
 
 // Health check endpoint
-fastify.get('/health', async (request, reply) => {
-  return { status: 'ok', timestamp: new Date().toISOString() };
+app.get('/health', async () => {
+  return { 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    service: 'My Friend Teacher API'
+  };
 });
 
 // Authentication middleware
-fastify.addHook('preHandler', async (request, reply) => {
+app.addHook('preHandler', async (request, reply) => {
   // Skip auth for health check
   if (request.url === '/health') {
     return;
@@ -64,20 +67,10 @@ fastify.addHook('preHandler', async (request, reply) => {
     });
     return;
   }
-
-  // TODO: Add RevenueCat validation
-  // const isValidSubscription = await AuthService.validateWithRevenueCat(userId);
-  // if (!isValidSubscription) {
-  //   reply.status(403).send({
-  //     error: 'Subscription required',
-  //     message: 'Valid subscription required to access this service'
-  //   });
-  //   return;
-  // }
 });
 
 // Chat endpoint
-fastify.post<{
+app.post<{
   Body: ChatRequest;
   Headers: AuthHeaders;
 }>('/api/chat', async (request, reply) => {
@@ -86,39 +79,35 @@ fastify.post<{
 
     // Validate request body
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      reply.status(400).send({
+      return reply.status(400).send({
         error: 'Invalid request',
         message: 'Messages array is required and cannot be empty',
       });
-      return;
     }
 
     if (!language || !['english', 'hebrew'].includes(language)) {
-      reply.status(400).send({
+      return reply.status(400).send({
         error: 'Invalid language',
         message: 'Language must be either "english" or "hebrew"',
       });
-      return;
     }
 
     if (!personality || typeof personality !== 'object') {
-      reply.status(400).send({
+      return reply.status(400).send({
         error: 'Invalid personality',
         message: 'Personality object is required',
       });
-      return;
     }
 
-    // Initialize ChatGPT service
+    // Generate AI response
     const chatService = new ChatGPTService();
     const response = await chatService.generateResponse(request.body);
 
     if (response.error) {
-      reply.status(500).send({
+      return reply.status(500).send({
         error: 'AI Service Error',
         message: response.error,
       });
-      return;
     }
 
     return {
@@ -126,33 +115,17 @@ fastify.post<{
       timestamp: new Date().toISOString(),
       userId: userId,
     };
-  } catch (error: any) {
-    fastify.log.error('Chat endpoint error:', error);
-
-    reply.status(500).send({
+  } catch (error) {
+    app.log.error('Chat endpoint error:', error);
+    return reply.status(500).send({
       error: 'Internal server error',
       message: 'An unexpected error occurred',
     });
   }
 });
 
-// Start server
-const start = async () => {
-  try {
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
-
-    await fastify.listen({ port, host });
-    fastify.log.info(`Server running at http://${host}:${port}`);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
+// For Vercel serverless deployment
+export default async (req: any, res: any) => {
+  await app.ready();
+  app.server.emit('request', req, res);
 };
-
-// Handle Vercel serverless
-if (process.env.NODE_ENV === 'production') {
-  module.exports = fastify;
-} else {
-  start();
-}

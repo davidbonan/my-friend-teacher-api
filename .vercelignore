@@ -1,4 +1,6 @@
-node_modules
-dist
+src/
+node_modules/
+*.md
+.env*
+.git/
 tsconfig.json
-.env* 
