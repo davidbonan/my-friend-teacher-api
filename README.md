@@ -1,6 +1,6 @@
 # My Friend Teacher API
 
-Secure Fastify backend API for the My Friend Teacher mobile application.
+Secure backend API for the My Friend Teacher mobile application, deployed on Vercel.
 
 ## 🚀 Deployment
 
@@ -13,38 +13,28 @@ This API is deployed on Vercel at: https://my-friend-teacher-api.vercel.app
    npm install
    ```
 
-2. **Environment configuration:**
-   Set the following environment variables in Vercel dashboard:
+2. **Build TypeScript:**
+   ```bash
+   npm run build
+   ```
+
+3. **Environment configuration in Vercel dashboard:**
    - `OPENAI_API_KEY`: Your OpenAI API key
    - `API_SECRET_KEY`: Shared secret key (must match mobile app)
    - `RATE_LIMIT_MAX`: Max requests per minute (optional, default: 10)
    - `RATE_LIMIT_WINDOW`: Rate limit window in ms (optional, default: 60000)
 
-3. **Local development:**
+4. **Deploy to Vercel:**
    ```bash
-   npm run dev
-   ```
-
-4. **Build and deploy:**
-   ```bash
-   npm run build
    vercel --prod
    ```
 
 ## 🏗️ Architecture
 
-- **Fastify Framework**: High-performance web framework optimized for speed
-- **TypeScript**: Full type safety and better development experience
-- **Vercel Serverless**: Scalable deployment with automatic scaling
-- **OpenAI Integration**: Secure ChatGPT API calls with error handling
-
-## 🔐 Security Features
-
-- **API Key Authentication**: Shared secret key validation using timing-safe comparison
-- **User ID Validation**: UUID format validation for user identification
-- **Rate Limiting**: Configurable per-user request throttling
-- **CORS Protection**: Properly configured cross-origin resource sharing
-- **Input Validation**: Comprehensive request body and parameter validation
+- **Vercel Serverless Functions**: Native serverless deployment
+- **TypeScript + JavaScript**: TypeScript services compiled to JavaScript
+- **Node.js Runtime**: Using @vercel/node@3 runtime
+- **OpenAI Integration**: Secure ChatGPT API calls
 
 ## 📡 API Endpoints
 
@@ -72,67 +62,33 @@ Headers:
 
 Body:
 {
-  "messages": [
-    {
-      "id": "1",
-      "content": "Hello!",
-      "isUser": true,
-      "timestamp": "2024-01-15T10:30:00.000Z"
-    }
-  ],
+  "messages": [...],
   "language": "english" | "hebrew",
-  "personality": {
-    "humor": 3,
-    "mockery": 2,
-    "seriousness": 4,
-    "professionalism": 3
-  },
+  "personality": { ... },
   "userId": "user-uuid"
 }
 ```
 
-**Response:**
-```json
-{
-  "message": "Hello! How can I help you today?",
-  "timestamp": "2024-01-15T10:30:01.000Z",
-  "userId": "user-uuid"
-}
-```
+## 🔐 Security Features
 
-## 🔑 Authentication
-
-All requests (except `/health`) require authentication headers:
-- `x-api-key`: Shared secret key that matches `API_SECRET_KEY` environment variable
-- `x-user-id`: Valid user identifier (UUID format or minimum 8 characters)
-
-## 📊 Rate Limiting
-
-- **Default**: 10 requests per minute per user
-- **Key**: Based on `x-user-id` header, fallback to IP address
-- **Window**: 60 seconds (configurable)
-- **Response**: 429 status code when exceeded
-
-## 🌍 Environment Variables
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | Yes | - |
-| `API_SECRET_KEY` | Shared secret with mobile app | Yes | - |
-| `RATE_LIMIT_MAX` | Max requests per window | No | 10 |
-| `RATE_LIMIT_WINDOW` | Rate limit window (ms) | No | 60000 |
-| `NODE_ENV` | Environment mode | No | development |
+- **API Key Authentication**: Shared secret key validation
+- **User ID Validation**: UUID format validation
+- **Rate Limiting**: 10 requests per minute per user (configurable)
+- **CORS Protection**: Configured for cross-origin requests
+- **Input Validation**: Request body validation
 
 ## 🧪 Testing
 
+**Test health endpoint:**
 ```bash
-# Health check
 curl https://my-friend-teacher-api.vercel.app/health
+```
 
-# Chat request
+**Test chat endpoint:**
+```bash
 curl -X POST https://my-friend-teacher-api.vercel.app/api/chat \
   -H "Content-Type: application/json" \
-  -H "x-api-key: your-secret-key" \
+  -H "x-api-key: mft-2024-secure-api-key-v1-random-string-12345" \
   -H "x-user-id: test-user-12345678-1234-4321-abcd-123456789012" \
   -d '{
     "messages": [{"id":"1","content":"Hello!","isUser":true,"timestamp":"2024-01-15T10:30:00.000Z"}],
@@ -140,6 +96,11 @@ curl -X POST https://my-friend-teacher-api.vercel.app/api/chat \
     "personality": {"humor":3,"mockery":2,"seriousness":4,"professionalism":3},
     "userId": "test-user-12345678-1234-4321-abcd-123456789012"
   }'
+```
+
+**Run full deployment test:**
+```bash
+node test-deployment.js
 ```
 
 ## 📁 Project Structure
@@ -152,26 +113,44 @@ curl -X POST https://my-friend-teacher-api.vercel.app/api/chat \
 │   │   └── ChatGPTService.ts   # OpenAI integration
 │   ├── types/
 │   │   └── index.ts            # TypeScript interfaces
-│   └── index.ts                # Main Fastify server
-├── dist/                       # Compiled JavaScript (build output)
+│   └── index.ts                # Original Fastify server (for dev)
+├── api/
+│   └── index.js                # Vercel serverless function
+├── dist/                       # Compiled TypeScript output
 ├── vercel.json                 # Vercel deployment configuration
-├── tsconfig.json               # TypeScript configuration
-├── package.json                # Dependencies and scripts
-└── README.md                   # Documentation
+├── test-deployment.js          # Deployment test script
+└── package.json                # Dependencies and scripts
 ```
 
 ## 🚀 Deployment Process
 
-1. **Build**: TypeScript compilation to `dist/` folder
-2. **Vercel**: Automatic deployment from `dist/index.js`
-3. **Environment**: Variables set in Vercel dashboard
-4. **Scaling**: Automatic based on traffic
+1. **Build**: `npm run build` compiles TypeScript to `dist/`
+2. **Function**: Vercel uses `api/index.js` as serverless function
+3. **Routes**: All routes handled by single function
+4. **Environment**: Variables set in Vercel dashboard
 
-## ✨ Features
+## 🔄 How It Works
 
-- **High Performance**: Fastify is one of the fastest Node.js frameworks
-- **Type Safety**: Full TypeScript coverage with strict typing
-- **Error Handling**: Comprehensive error catching and user-friendly messages
-- **Logging**: Structured logging for debugging and monitoring
-- **Validation**: Input validation for all endpoints
-- **Security**: Multiple layers of authentication and authorization
+1. **TypeScript Services**: Business logic in `src/services/`
+2. **Compilation**: TypeScript compiled to `dist/` folder
+3. **Serverless Handler**: `api/index.js` imports from `dist/`
+4. **Request Routing**: Single function handles all endpoints
+5. **Response**: JSON responses with proper status codes
+
+## ✨ Key Features
+
+- **Single Function**: All endpoints in one serverless function
+- **TypeScript Support**: Business logic in TypeScript
+- **Zero Config**: Works out-of-the-box with Vercel
+- **Error Handling**: Comprehensive error responses
+- **Rate Limiting**: In-memory rate limiting per user
+- **Authentication**: Secure API key validation
+
+## 🌍 Environment Variables
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `OPENAI_API_KEY` | OpenAI API key | Yes | - |
+| `API_SECRET_KEY` | Shared secret with mobile app | Yes | - |
+| `RATE_LIMIT_MAX` | Max requests per window | No | 10 |
+| `RATE_LIMIT_WINDOW` | Rate limit window (ms) | No | 60000 |
