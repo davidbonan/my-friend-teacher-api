@@ -1,9 +1,9 @@
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import fastify from 'fastify';
-import { AuthService } from '../src/services/AuthService';
-import { ChatGPTService } from '../src/services/ChatGPTService';
-import { AuthHeaders, ChatRequest } from '../src/types';
+import { AuthService } from './services/AuthService';
+import { ChatGPTService } from './services/ChatGPTService';
+import { AuthHeaders, ChatRequest } from './types';
 
 // Create Fastify instance
 const app = fastify({
