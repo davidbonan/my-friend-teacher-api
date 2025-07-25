@@ -5,7 +5,7 @@ const app = Fastify({
 });
 
 app.get('/', async (req, reply) => {
-  return reply.status(200);
+  return reply.status(200).send('Hello World');
 });
 
 export default async function handler(req, reply) {
