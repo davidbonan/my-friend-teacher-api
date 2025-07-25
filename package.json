@@ -1,0 +1,12 @@
+{
+  "name": "api",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidbonan/my-friend-teacher-api.git"
+  },
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "fastify": "^5.4.0"
+  }
+}
