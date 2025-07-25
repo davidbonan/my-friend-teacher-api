@@ -1,9 +1,9 @@
-import fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { AuthService } from './services/AuthService';
-import { ChatGPTService } from './services/ChatGPTService';
-import { AuthHeaders, ChatRequest } from './types';
+import fastify from 'fastify';
+import { AuthService } from '../src/services/AuthService';
+import { ChatGPTService } from '../src/services/ChatGPTService';
+import { AuthHeaders, ChatRequest } from '../src/types';
 
 // Create Fastify instance
 const app = fastify({
@@ -27,10 +27,10 @@ app.register(rateLimit, {
 
 // Health check endpoint
 app.get('/health', async () => {
-  return { 
-    status: 'ok', 
+  return {
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'My Friend Teacher API'
+    service: 'My Friend Teacher API',
   };
 });
 
