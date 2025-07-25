@@ -1,20 +1,20 @@
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { ChatGPTService } from './services/ChatGPTService';
+import Fastify from 'fastify';
 import { AuthService } from './services/AuthService';
-import { ChatRequest, AuthHeaders } from './types';
+import { ChatGPTService } from './services/ChatGPTService';
+import { AuthHeaders, ChatRequest } from './types';
 
 const fastify = Fastify({
   logger: {
-    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info'
-  }
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
+  },
 });
 
 // Register CORS
 fastify.register(cors, {
   origin: true, // Allow all origins in development
-  credentials: true
+  credentials: true,
 });
 
 // Register rate limiting
@@ -22,8 +22,8 @@ fastify.register(rateLimit, {
   max: parseInt(process.env.RATE_LIMIT_MAX || '10'),
   timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW || '60000'), // 1 minute
   keyGenerator: (request) => {
-    return request.headers['x-user-id'] as string || request.ip;
-  }
+    return (request.headers['x-user-id'] as string) || request.ip;
+  },
 });
 
 // Health check endpoint
@@ -44,7 +44,7 @@ fastify.addHook('preHandler', async (request, reply) => {
   if (!apiKey || !userId) {
     reply.status(401).send({
       error: 'Missing authentication headers',
-      message: 'x-api-key and x-user-id headers are required'
+      message: 'x-api-key and x-user-id headers are required',
     });
     return;
   }
@@ -52,7 +52,7 @@ fastify.addHook('preHandler', async (request, reply) => {
   if (!AuthService.validateApiKey(apiKey)) {
     reply.status(401).send({
       error: 'Invalid API key',
-      message: 'The provided API key is not valid'
+      message: 'The provided API key is not valid',
     });
     return;
   }
@@ -60,7 +60,7 @@ fastify.addHook('preHandler', async (request, reply) => {
   if (!AuthService.validateUserId(userId)) {
     reply.status(401).send({
       error: 'Invalid user ID',
-      message: 'The provided user ID is not valid'
+      message: 'The provided user ID is not valid',
     });
     return;
   }
@@ -88,7 +88,7 @@ fastify.post<{
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       reply.status(400).send({
         error: 'Invalid request',
-        message: 'Messages array is required and cannot be empty'
+        message: 'Messages array is required and cannot be empty',
       });
       return;
     }
@@ -96,7 +96,7 @@ fastify.post<{
     if (!language || !['english', 'hebrew'].includes(language)) {
       reply.status(400).send({
         error: 'Invalid language',
-        message: 'Language must be either "english" or "hebrew"'
+        message: 'Language must be either "english" or "hebrew"',
       });
       return;
     }
@@ -104,7 +104,7 @@ fastify.post<{
     if (!personality || typeof personality !== 'object') {
       reply.status(400).send({
         error: 'Invalid personality',
-        message: 'Personality object is required'
+        message: 'Personality object is required',
       });
       return;
     }
@@ -116,7 +116,7 @@ fastify.post<{
     if (response.error) {
       reply.status(500).send({
         error: 'AI Service Error',
-        message: response.error
+        message: response.error,
       });
       return;
     }
@@ -124,15 +124,14 @@ fastify.post<{
     return {
       message: response.message,
       timestamp: new Date().toISOString(),
-      userId: userId
+      userId: userId,
     };
-
   } catch (error: any) {
     fastify.log.error('Chat endpoint error:', error);
-    
+
     reply.status(500).send({
       error: 'Internal server error',
-      message: 'An unexpected error occurred'
+      message: 'An unexpected error occurred',
     });
   }
 });
@@ -142,7 +141,7 @@ const start = async () => {
   try {
     const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
     const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
-    
+
     await fastify.listen({ port, host });
     fastify.log.info(`Server running at http://${host}:${port}`);
   } catch (err) {

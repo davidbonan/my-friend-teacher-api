@@ -1,16 +1,5 @@
 {
   "version": 2,
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/index.ts"
-    }
-  ],
-  "functions": {
-    "src/index.ts": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }
